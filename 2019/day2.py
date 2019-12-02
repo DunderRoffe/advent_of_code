@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 def run(memory: List[int]) -> List[int]:
     memory_ptr: int = 0
@@ -52,12 +52,17 @@ print(f"Part 1: {memory[0]}")
 # Part 2
 #
 
-for noun in range(100):
-    for verb in range(100):
-        memory = memory_initial.copy()
-        memory[1] = noun
-        memory[2] = verb
-        run(memory)
+def get_noun_verb(target: int) -> Optional[int]:
+     for noun in range(100):
+         for verb in range(100):
+             memory = memory_initial.copy()
+             memory[1] = noun
+             memory[2] = verb
+             run(memory)
 
-        if memory[0] == 19690720:
-            print(f"Part 2: {(100 * noun) + verb}")
+             if memory[0] == target:
+                 return (100 * noun) + verb
+
+     return None
+
+print(f"Part 2: {get_noun_verb(19690720)}")
