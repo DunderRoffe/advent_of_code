@@ -18,58 +18,89 @@ class Position():
 
 class Node():
 
-     position = Position()
-     steps: int = -1
+    position = Position()
+    steps: int = -1
+
+class Line():
+
+    p1: Position
+    p2: Position
+
+    def __init__(self, p1: Position, p2: Position):
+        self.p1 = p1.copy()
+        self.p2 = p2.copy()
+
+    def is_horizontal(self) -> bool:
+        return self.p1.x == self.p2.x
+
+    def __len__(self) -> int:
+        return abs(self.p1.x - self.p2.x) + abs(self.p1.y - self.p2.y)
 
 
-def parse_wire_instructions(wire_instructions: List[str], cells: Dict[int, Node], is_wire_1: bool) -> List[Node]:
-    collisions: List[Node] = list()
+def parse_wire_instructions(wire_instructions: List[str]) -> List[Line]:
     next_position = Position()
-    steps: int = 0
+    lines: List[Line] = list()
 
     for instr in wire_instructions:
         direction: str = instr[0]
         length: int = int(instr[1:])
 
-        for i in range(length):
-            steps += 1
-            if direction == "R":
-               next_position.x += 1
-            elif direction == "L":
-               next_position.x -= 1
-            elif direction == "U":
-               next_position.y += 1
-            elif direction == "D":
-               next_position.y -= 1
-            else:
-               raise Exception(f"Parse error: Illegal direction '{direction}'")
+        before_position = next_position.copy()
+        if direction == "R":
+           next_position.x += length
+        elif direction == "L":
+           next_position.x -= length
+        elif direction == "U":
+           next_position.y += length
+        elif direction == "D":
+           next_position.y -= length
+        else:
+           raise Exception(f"Parse error: Illegal direction '{direction}'")
 
-            temp_position = next_position.copy()
-            temp_hash = hash(temp_position)
-            if temp_hash not in cells:
-                pointer = Node()
-                cells[temp_hash] = pointer
-                pointer.position = temp_position
-            else:
-                pointer = cells[temp_hash]
+        temp_position = next_position.copy()
+        line = Line(before_position, temp_position)
+        lines.append(line)
 
-            if is_wire_1:
-                pointer.steps = steps
-
-            elif pointer.steps != -1:
-                pointer.steps += steps
-                collisions.append(pointer)
-
-    return collisions
+    return lines
 
 def parse_two_wires(list_of_instructions: List[List[str]]) -> List[Node]:
-    cells: Dict[int, Node] = dict()
+    lines_in_wire1 = parse_wire_instructions(list_of_instructions[0])
+    lines_in_wire2 = parse_wire_instructions(list_of_instructions[1])
 
-    cells[hash(Position())] = Node()
+    def does_intersect(hline: Line, vline: Line) -> bool:
+        horizontal_match = max(hline.p1.x, hline.p2.x) >= vline.p1.x and min(hline.p1.x, hline.p2.x) <= vline.p1.x
+        vertical_match = max(vline.p1.y, vline.p2.y) >= hline.p1.y and min(vline.p1.y, vline.p2.y) <= hline.p1.y
 
-    parse_wire_instructions(list_of_instructions[0], cells, is_wire_1=True)
-    return parse_wire_instructions(list_of_instructions[1], cells, is_wire_1=False)
+        return horizontal_match and vertical_match
 
+    collisions: List[Node] = []
+    steps1: int = 0
+    steps2: int = 0
+    for l1 in lines_in_wire1:
+        for l2 in lines_in_wire2:
+
+            if l1.is_horizontal():
+                if not l2.is_horizontal():
+                    match = does_intersect(l1, l2)
+                else:
+                    match = True
+            else:
+                if not l1.is_horizontal():
+                    match = does_intersect(l2, l1)
+                else:
+                    match = True
+
+            if match:
+                n = Node()
+                n.steps = steps1 + steps2 + l2.p1.x + l1.p1.y
+                n.position.x = l2.p1.x
+                n.position.y = l1.p1.y
+                collisions.append(n)
+
+            steps2 += len(l2)
+        steps1 += len(l1)
+
+    return collisions
 #
 # Part 1
 #
