@@ -3,6 +3,7 @@ from typing import Optional, Dict, Tuple, List, Iterable
 class Node:
     orbits: Optional["Node"] = None
     total_orbits: int = 0
+    marked: bool = False
 
 
 def cascade_orbit_count_increase(node: Node, amount: int):
@@ -70,4 +71,49 @@ real_map = dict()
 with open("day6_input.txt", "r") as f:
     parse(real_map, f.readlines())
 
-print(calc_orbits(real_map.values()))
+print(f"Part 1: total orbits = {calc_orbits(real_map.values())}")
+
+#
+# Part 2
+#
+
+def mark_recursive(node: Node) -> None:
+    if node == None:
+        return
+
+    node.marked = True
+    if node.orbits != None:
+        mark_recursive(node.orbits)
+
+
+you = real_map["YOU"]
+mark_recursive(you.orbits)
+
+san = real_map["SAN"]
+
+def find_marked(node: Node) -> Optional[Tuple[int, Node]]:
+    steps: int = 0
+    while True:
+
+        if node == None:
+            return None
+
+        if node.marked:
+            return (steps, node)
+
+        steps += 1
+        node = node.orbits
+
+
+jumps, common_node = find_marked(san.orbits)
+
+while True:
+    you.orbits = you.orbits.orbits
+    jumps += 1
+
+    if you.orbits == common_node:
+        break
+
+print(f"Part 2: Nr jumps = {jumps}")
+
+
