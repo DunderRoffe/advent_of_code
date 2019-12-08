@@ -1,11 +1,13 @@
 from typing import List, Optional, Any, Iterable, Tuple
 
+
 def test(given: Any, expected: Any) -> bool:
     ret = given == expected
     if not ret:
         print(f"{given} != {expected}")
 
     return ret
+
 
 def using_mode(mode: int, memory: List[int], address: int) -> int:
 
@@ -16,6 +18,7 @@ def using_mode(mode: int, memory: List[int], address: int) -> int:
     else:
         raise Exception(f"Unkown mode: {mode}")
 
+
 def get_param(memory: List[int], op_ptr: int, param_nr: int = 0) -> int:
     mode = (memory[op_ptr] // (10 ** (2 + param_nr))) % 10
     return using_mode(mode, memory, op_ptr + param_nr + 1)
@@ -24,6 +27,7 @@ def get_param(memory: List[int], op_ptr: int, param_nr: int = 0) -> int:
 def get_params(nr_of_params: int, memory: List[int], op_ptr: int) -> Iterable[int]:
     for i in range(nr_of_params):
         yield get_param(memory, op_ptr, param_nr=i)
+
 
 def run(memory: List[int], inputs: List[int] = [], debug=False) -> Tuple[List[int], List[int]]:
     memory_ptr: int = 0
@@ -69,9 +73,55 @@ def run(memory: List[int], inputs: List[int] = [], debug=False) -> Tuple[List[in
             outputs.append(memory[output_ptr])
             memory_ptr += nr_of_params + 1
 
+        elif opcode == 5:
+            # Jump if true
+            nr_of_params = 2
+            condition_ptr, jump_ptr_ptr = get_params(nr_of_params, memory, memory_ptr)
+
+            if memory[condition_ptr] != 0:
+                memory_ptr = memory[jump_ptr_ptr]
+
+            else:
+                memory_ptr += nr_of_params + 1
+
+        elif opcode == 6:
+            # Jump if false
+            nr_of_params = 2
+            condition_ptr, jump_ptr_ptr = get_params(nr_of_params, memory, memory_ptr)
+
+            if memory[condition_ptr] == 0:
+                memory_ptr = memory[jump_ptr_ptr]
+
+            else:
+                memory_ptr += nr_of_params + 1
+
+        elif opcode == 7:
+            # less than
+            nr_of_params = 3
+            param1_ptr, param2_ptr, store_ptr = get_params(nr_of_params, memory, memory_ptr)
+
+            if memory[param1_ptr] < memory[param2_ptr]:
+                memory[store_ptr] = 1
+            else:
+                memory[store_ptr] = 0
+
+            memory_ptr += nr_of_params + 1
+
+        elif opcode == 8:
+            # equals
+            nr_of_params = 3
+            param1_ptr, param2_ptr, store_ptr = get_params(nr_of_params, memory, memory_ptr)
+
+            if memory[param1_ptr] == memory[param2_ptr]:
+                memory[store_ptr] = 1
+            else:
+                memory[store_ptr] = 0
+
+            memory_ptr += nr_of_params + 1
+
         elif opcode == 99:
             # Halt
-            return (memory, outputs)
+            return memory, outputs
 
         else:
             raise Exception(f"Unknown opcode {opcode}")
@@ -85,9 +135,23 @@ assert test(run([1, 1, 1, 4, 99, 5, 6, 0, 99 ]) , ([30, 1, 1, 4, 2, 5, 6, 0,99],
 assert test(run([1002,4,3,4,33]), ([1002, 4, 3, 4, 99], []))
 assert test(run([3, 0, 4, 0, 99], inputs=[1]), ([1, 0, 4, 0, 99], [1]))
 
+# Test equal
+assert test(run([3,9,8,9,10,9,4,9,99,-1,8], inputs=[8])[1], [1])
+assert test(run([3,9,8,9,10,9,4,9,99,-1,8], inputs=[7])[1], [0])
+
+assert test(run([3,3,1108,-1,8,3,4,3,99], inputs=[8])[1], [1])
+assert test(run([3,3,1108,-1,8,3,4,3,99], inputs=[7])[1], [0])
+
+# Test less than
+assert test(run([3,9,7,9,10,9,4,9,99,-1,8], inputs=[7])[1], [1])
+assert test(run([3,9,7,9,10,9,4,9,99,-1,8], inputs=[8])[1], [0])
+
+assert test(run([3,3,1107,-1,8,3,4,3,99], inputs=[7])[1], [1])
+assert test(run([3,3,1107,-1,8,3,4,3,99], inputs=[8])[1], [0])
+
 
 #
-# Part 1
+# Solutions
 #
 
 memory_initial: List[int]
@@ -95,6 +159,10 @@ with open("day5_input.txt", "r") as f:
     memory_initial = [ int(cell) for cell in f.readlines()[0].split(",") ]
 
 memory = memory_initial.copy()
-memory, outputs = run(memory, inputs=[1], debug=True)
+_, outputs = run(memory, inputs=[1])
 print(f"Part 1: Diagnostics code {outputs[-1]}")
 
+
+memory = memory_initial.copy()
+_, outputs = run(memory, inputs=[5], debug=True)
+print(f"Part 2: Diagnostics code {outputs[-1]}")
