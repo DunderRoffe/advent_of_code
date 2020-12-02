@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <assert.h>
 
 #include "day2_input.h"
 #include "utils.h"
@@ -60,6 +61,20 @@ int main()
 	uint16_t nr_valid_sled;
 	uint16_t nr_valid_toboggan;
 
+	// Test
+	nr_valid_sled = 0;
+	nr_valid_toboggan = 0;
+
+	for (i = 0; i < ARRAY_SIZE(test_input); i++) {
+		parse_entry(test_input[i], &e);
+		nr_valid_sled += is_valid_sled_entry(&e);
+		nr_valid_toboggan += is_valid_toboggan_entry(&e);
+	}
+
+	assert(nr_valid_sled == 2);
+	assert(nr_valid_toboggan == 1);
+
+	// Real
 	nr_valid_sled = 0;
 	nr_valid_toboggan = 0;
 
