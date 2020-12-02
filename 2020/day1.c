@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
+#include "utils.h"
 
 uint16_t test_input[] = {
 	1721,
